@@ -23,12 +23,31 @@ group(G,[N1|Ns],[G1|Gs]) :-
    subtract(G,G1,R),
    group(R,Ns,Gs).
 
+not_in(_,[]) :- !.
+not_in(X, [H|T]) :-
+   intersection(X,H,I),
+   same_length(X, I),
+   not_in(X,T).
+
+not_member(_, []) :- !.
+
+not_member([X|_], [H|T]) :-
+   %  write('Member to Check   '),
+   %  writeln(X),
+   %  write('Is in List    '),
+   %  writeln(H),
+    not_in(X,H) ,!, 
+    writeln('hit'),
+    not_member(X, T).
+    %not_member(Y, T).
+
 players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman]).
 
 games(0,[],_Acc) :- !.
 games(I,[A|B],Acc) :- I > 0,
                 players(P),
                 group(P,[3,3,3],A), 
-                write(Acc),                           
+                writeln(Acc),
+                not_member(A, Acc),
                 I1 is I-1,
                 games(I1,B,[A|Acc]).
