@@ -25,10 +25,10 @@ group(G,[N1|Ns],[G1|Gs]) :-
 
 players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman]).
 
-games(0,_) :- !.
-games(I,X) :- I > 0,
-                players(P), 
-                group(P,[3,3,3],X), 
+games(0,[],_Acc) :- !.
+games(I,[A|B],Acc) :- I > 0,
+                players(P),
+                group(P,[3,3,3],A), 
+                write(Acc),                           
                 I1 is I-1,
-                games(I1,X).
- 
+                games(I1,B,[A|Acc]).
