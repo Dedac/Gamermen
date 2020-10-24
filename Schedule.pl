@@ -22,15 +22,37 @@ group(G,[N1|Ns],[G1|Gs]) :-
    subtract(G,G1,R),
    group(R,Ns,Gs).
 
-players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman]).
+players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian]).
 
+%Check in any member of the the list X exists in the list A
+not_in([],_).
+not_in([XH|XT],A) :- \+ memberchk(XH, A), not_in(XT,A).
+
+%Check that all items in List X are anywhere in a list of lists A
+all_in([],_).
+all_in(X,[AH|AT]) :- is_list(AH),
+                     intersection(X, AH, X)
+                     ;
+                     all_in(X,AT).
+
+%Split a list into pairs, and count how many times each pair appears in the list of combinations
+count_pairs_in(ListToCheck, ListOfCombinations, Count) :- selectN(2,ListToCheck,Pair), 
+                                                 aggregate_all(count, all_in(Pair,ListOfCombinations),Count).
+                                                 
+
+%Get the player combinations that satisfy the rules
 games(0,[],_) :- !.
 games(I,[A|B],Acc) :- I > 0,
                 players(P), 
-                group(P,[3,3,3],A),
-                \+ member(A, Acc),
-                I1 is I-1,
-                games(I1,B,[A|Acc]).
+                group(P,[3,4,3],A), %Group all the players into games for the month
+                not_in(A, Acc),  %the new player sets don't contain any previous player sets
+                append(Acc,A,Acc1), %Add the new player sets to the full list of previous games
+                aggregate_all(min(Count), count_pairs_in(P,Acc1,Count), L),
+                between(0,1,L),
+                
+                %between(0, 2, SumCount),
+                I1 is I-1, %move to the next game
+                games(I1,B,Acc1).
 
 %aggregate_all(count, member(rich,[rich,andrew,ralph]), X).
 
