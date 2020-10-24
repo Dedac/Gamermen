@@ -36,9 +36,16 @@ all_in(X,[AH|AT]) :- is_list(AH),
                      all_in(X,AT).
 
 %Split a list into pairs, and count how many times each pair appears in the list of combinations
-count_pairs_in(ListToCheck, ListOfCombinations, Count) :- selectN(2,ListToCheck,Pair), 
+pairs_in(ListToCheck, ListOfCombinations, Count) :- selectN(2,ListToCheck,Pair), 
                                                  aggregate_all(count, all_in(Pair,ListOfCombinations),Count).
-                                                 
+
+%True if all the items in a numeric list are within Range of one another
+list_items_in_range([H|T], Range) :- list_items_in_range([H|T], Range, H, H). %The first min value is the first item in the list
+list_items_in_range([],_,_,_). %If the list is empty, items are always within the range                                             
+list_items_in_range([H|T], Range, Min, Max) :- Min1 is min(Min,H),
+                                          Max1 is max(Max, H),
+                                          Max1 =< Range+Min1, %max and min are still within the range                                          
+                                          list_items_in_range(T, Range, Min1, Max1).
 
 %Get the player combinations that satisfy the rules
 games(0,[],_) :- !.
@@ -47,9 +54,10 @@ games(I,[A|B],Acc) :- I > 0,
                 group(P,[3,4,3],A), %Group all the players into games for the month
                 not_in(A, Acc),  %the new player sets don't contain any previous player sets
                 append(Acc,A,Acc1), %Add the new player sets to the full list of previous games
-                aggregate_all(min(Count), count_pairs_in(P,Acc1,Count), L),
-                between(0,1,L),
-                
+                aggregate_all(bag(Count), pairs_in(P,Acc1,Count), ListOfReplayCounts),
+                min_list(ListOfReplayCounts, ReplayMin),
+                ReplayMax is ReplayMin + 1,
+                max_list(ListOfReplayCounts, ReplayMax),
                 %between(0, 2, SumCount),
                 I1 is I-1, %move to the next game
                 games(I1,B,Acc1).
