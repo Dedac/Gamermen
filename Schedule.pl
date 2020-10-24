@@ -45,10 +45,10 @@ in_list_length(_,[],_) :- fail.
 in_list_length(X,[H|T],Length) :- memberchk(X,H), length(H,Length) ; in_list_length(X,T,Length).
 
 %Get the list of all list lengths for an item
-in_lists_lengths(X,Y, Lengths) :- aggregate_all(bag(L), in_list_length(X,Y,L), Lengths).
+in_lists_lengths([], _, _) :- fail.
+in_lists_lengths([XH|XT],Y, Lengths) :- aggregate_all(bag(L), in_list_length(XH,Y,L), Lengths); in_lists_lengths(XT, Y, Lengths).
 
-list_lengths([],_,_) :- fail.
-list_lengths([H|T],Y,SetLengths) :- list_lengths(T,Y,Lengths).
+list_lengths(X,Y,SetLengths) :- aggregate_all(bag(L), in_lists_lengths(X,Y,L), SetLengths).
 
 %all_list_lengths([H|T],Y,SetofLengths) :- aggregate_all(bag(Lengths), in_lists_lengths(H,Y,Lengths),SetofLengths).
 
