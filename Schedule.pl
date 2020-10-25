@@ -1,3 +1,6 @@
+%   swipl -O -s Schedule.pl -g go
+% Game Scheduler, run from the command line with the line above for swi prolog, and check output.txt 
+
 :- use_module(library(lists)).
 
 write_and_close(X) :-
@@ -98,4 +101,5 @@ games(I,[A|B],Acc) :- I > 0,
                 games(I1,B,Acc1),
                 write_and_close(I),
                 write_and_close(A).
-%- games([A,B]).
+
+go :- games([A,B,C]), writeln(A|B|C), halt.
