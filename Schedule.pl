@@ -1,6 +1,12 @@
 :- use_module(library(lists)).
 
-players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian,matthew,melanie,alf,arbuckle,q,w,e,r,t,y,u,i,o,r]).
+write_and_close(X) :-
+    open('output.txt',append,Out),
+    writeln(Out,X),
+    close(Out).
+
+%players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian,matthew,melanie,alf,arbuckle,q,w,e,r,t,y,u,i,o,r]).
+players([rich,joe,ralph,andrew,jeff,schultz,a,b,c]).
 
 % L is The subset of the list following X
 el(X,[X|L],L). %When X is the first item, return the list without X
@@ -26,7 +32,7 @@ group(G,[N1|Ns],[G1|Gs]) :-
 
 
 %Check in any member of the the list X exists in the list A
-not_in([],_):- !.
+not_in([],_) :- !.
 not_in([XH|XT],A) :- \+ memberchk(XH, A), not_in(XT,A).
 
 %Check that all items in List X are anywhere in a list of lists A
@@ -53,10 +59,10 @@ list_lengths(X,Y,SetLengths) :- aggregate_all(bag(L), in_lists_lengths(X,Y,L), S
 %count(NumberToCount,List,Total) - Number of times Number is in the list
 count(_,[],0).
 count(Number,[Number|T],N) :- count(Number,T,N1), N is N1 + 1.
-count(Number,[X|T],N) :- X \= Number, count(Number,T,N).
+count(Number,[X|T],N) :- dif(X,Number), count(Number,T,N).
 
 %counts(Number, ListofLists, Count) true for each one of the number of times a 'Number' is found in a list of lists
-counts(_,[],_) :- !, fail.
+counts(_,[],_) :- !, fail. 
 counts(Number, [H|T], Count) :- is_list(H), count(Number,H,Count); counts(Number, T, Count).
 
 %list_counts(Number, ListOfLists, Counts) - Counts is a List of occurences for a 'Number' in the given list of lists
@@ -70,23 +76,26 @@ items_in_range([],_,_,_) :- !. %If the list is empty, items are always within th
 items_in_range([H|T], Range, Min, Max) :- Min1 is min(Min,H),
                                           Max1 is max(Max,H),!,
                                           Max1 =< Range+Min1, %max and min are still within the range                                          
-                                          items_in_range(T, Range, Min1, Max1).
+                                          items_in_range(T, Range, Min1, Max1), !.
 
 %Get the player combinations that satisfy the rules
 games(GamesToPlay) :- length(GamesToPlay, NumberOfGames), games(NumberOfGames, GamesToPlay, []), !.
 games(0,[],_) :- !.
 games(I,[A|B],Acc) :- I > 0,
+                writeln(Acc),
                 players(P), !,
-                group(P,[4,4,4,4,4,4],A), %Group all the players into games for the month
+                group(P,[3,3,3],A), %Group all the players into games for the month
                 not_in(A, Acc), %the new player sets don't contain any previous player sets
                 append(Acc,A,Acc1), %Add the new player sets to the full list of previous games
                 aggregate_all(bag(Count), pairs_in(P,Acc1,Count), ListOfReplayCounts), %Get the list of times a player pair plays each other
                 items_in_range(ListOfReplayCounts,1), %Players play with each other player close to the same number of times
-                writeln(I),
-                list_counts(3,Acc1,ThreePlayerCounts),
+                list_lengths(P,Acc1,SetLengths),
+                list_counts(3,SetLengths,ThreePlayerCounts),
                 items_in_range(ThreePlayerCounts,1),
-                list_counts(4,Acc1,FourPlayerCounts),
+                list_counts(4,SetLengths,FourPlayerCounts),
                 items_in_range(FourPlayerCounts,1),
-                I1 is I-1, !, %move to the next game
-                writeln(A),
-                games(I1,B,Acc1).
+                I1 is I-1,  %move to the next game
+                games(I1,B,Acc1),
+                write_and_close(I),
+                write_and_close(A).
+%- games([A,B]).

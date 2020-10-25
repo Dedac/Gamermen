@@ -1,0 +1,12 @@
+1
+[[rich,jeff,c],[joe,schultz,a],[ralph,andrew,b]]
+2
+[[rich,andrew,a],[joe,jeff,b],[ralph,schultz,c]]
+3
+[[rich,joe,ralph],[andrew,jeff,schultz],[a,b,c]]
+1
+[[rich,joe,jeff],[ralph,andrew,b],[schultz,a,c]]
+2
+[[rich,joe,andrew],[ralph,jeff,a],[schultz,b,c]]
+3
+[[rich,joe,ralph],[andrew,jeff,schultz],[a,b,c]]
