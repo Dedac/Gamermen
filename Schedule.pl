@@ -1,10 +1,10 @@
 :- use_module(library(lists)).
 
-players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian,matthew,melanie,alf,arbuckle]).
+players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian,matthew,melanie,alf,arbuckle,q,w,e,r,t,y,u,i,o,r]).
 
 % L is The subset of the list following X
 el(X,[X|L],L). %When X is the first item, return the list without X
-el(X,[_|L],R) :- el(X,L,R). %When X is not the first elemwnt, run again with the resto of the the list, looking to return the list of items after X 
+el(X,[_|L],R) :- el(X,L,R). %When X is not the first elemwnt, run again with the rest of the the list, looking to return the list of items after X 
 
 % selectN(N,L,S) :- select N elements of the list L and put them in 
 %    the set S. Via backtracking return all posssible selections, but
@@ -77,17 +77,16 @@ games(GamesToPlay) :- length(GamesToPlay, NumberOfGames), games(NumberOfGames, G
 games(0,[],_) :- !.
 games(I,[A|B],Acc) :- I > 0,
                 players(P), !,
-                group(P,[4,4,3,3],A), %Group all the players into games for the month
+                group(P,[4,4,4,4,4,4],A), %Group all the players into games for the month
                 not_in(A, Acc), %the new player sets don't contain any previous player sets
                 append(Acc,A,Acc1), %Add the new player sets to the full list of previous games
                 aggregate_all(bag(Count), pairs_in(P,Acc1,Count), ListOfReplayCounts), %Get the list of times a player pair plays each other
-                writeln(ListOfReplayCounts),
                 items_in_range(ListOfReplayCounts,1), %Players play with each other player close to the same number of times
+                writeln(I),
+                list_counts(3,Acc1,ThreePlayerCounts),
+                items_in_range(ThreePlayerCounts,1),
+                list_counts(4,Acc1,FourPlayerCounts),
+                items_in_range(FourPlayerCounts,1),
                 I1 is I-1, !, %move to the next game
-                games(I1,B,Acc1),
-                writeln(Acc1)
-                %list_counts(3,Acc1,ThreePlayerCounts),
-                %items_in_range(ThreePlayerCounts,2),
-                %list_counts(4,Acc1,FourPlayerCounts),
-                %items_in_range(FourPlayerCounts,2).
-               . 
+                writeln(A),
+                games(I1,B,Acc1).
