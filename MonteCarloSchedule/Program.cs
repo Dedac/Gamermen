@@ -17,7 +17,7 @@ namespace MonteCarloSchedule
                 BestSet = JsonSerializer.Deserialize<Set>(File.ReadAllText(args[0]));
 
             //Run as many in parallel as your processors support
-            Parallel.For(0, 8, (int j) =>
+            Parallel.For(0, 10, (int j) =>
             {
                 int counter = 0;
                 while (counter < 1000000)
@@ -28,7 +28,7 @@ namespace MonteCarloSchedule
                         Console.WriteLine($"{j} - {BestSet.EvalText()}");
 
                     var set = BuildSet();
-                    if (set.Min3s > 0 && set.Max3s < 5 &&
+                    if (//set.Min3s > 0 && set.Max3s < 5 &&
                         set.PlayedWithMin >= BestSet.PlayedWithMin &&
                         set.PlayedWithSum > BestSet.PlayedWithSum
                        )
@@ -51,17 +51,17 @@ namespace MonteCarloSchedule
                 var players = GetNewPlayerList().Select(p => p.Name).ToList();
 
                 //Get the list of players that don't have 2  3 player games yet
-                var needs3player = currentSet.Players.Where(p => p.PlayerCount3s < 2).Select(p => p.Name).ToList();
-                players = players.Except(needs3player).ToList(); //get the list of players without those players
+                //var needs3player = currentSet.Players.Where(p => p.PlayerCount3s < 2).Select(p => p.Name).ToList();
+                //players = players.Except(needs3player).ToList(); //get the list of players without those players
 
                 players.Shuffle();
-                needs3player.Shuffle();
+                //needs3player.Shuffle();
                 //put the needs 3 player group at the end to make them more likley to get a three player game
-                players.AddRange(needs3player);
+                //players.AddRange(needs3player);
 
                 for (int i = 0; i < 7; i++) //Build 7 games
                 {
-                    var playercount = (i == 5 || i == 6) ? 3 : 4;  //The Last 2 games will be 3 player games
+                    var playercount = 4; // (i == 5 || i == 6) ? 3 : 4;  //The Last 2 games will be 3 player games
                     var game = new Game() { Players = players.GetRange(0, playercount) }; //Get the next set of players for this game
 
                     //Look to swap an players for the maximum number of different players played
@@ -148,7 +148,9 @@ namespace MonteCarloSchedule
                 new Player {Name = "Lindsay"},
                 new Player {Name = "Jordan F"},
                 new Player {Name = "Danielle"},
-                new Player {Name = "Jordan B"}
+                new Player {Name = "Jordan B"},
+                new Player {Name = "Matt"},
+                new Player {Name = "Kayleigh"}
             };
 
         static List<Month> GetNewMonthList() =>
