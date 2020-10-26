@@ -1,5 +1,5 @@
 %   swipl -O -s Schedule.pl -g go
-% Game Scheduler, run from the command line with the line above for swi prolog, and check output.txt 
+% Game Scheduler, run from the command line with the line above for swi prolog, and check output. 
 
 :- use_module(library(lists)).
 
@@ -9,7 +9,7 @@ write_and_close(X) :-
     close(Out).
 
 %players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian,matthew,melanie,alf,arbuckle,q,w,e,r,t,y,u,i,o,r]).
-players([rich,joe,ralph,andrew,jeff,schultz,a,b,c]).
+players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian]).
 
 % L is The subset of the list following X
 el(X,[X|L],L). %When X is the first item, return the list without X
@@ -85,21 +85,21 @@ items_in_range([H|T], Range, Min, Max) :- Min1 is min(Min,H),
 games(GamesToPlay) :- length(GamesToPlay, NumberOfGames), games(NumberOfGames, GamesToPlay, []), !.
 games(0,[],_) :- !.
 games(I,[A|B],Acc) :- I > 0,
-                writeln(Acc),
+                %writeln(Acc),
                 players(P), !,
-                group(P,[3,3,3],A), %Group all the players into games for the month
+                group(P,[3,3,4],A), %Group all the players into games for the month
                 not_in(A, Acc), %the new player sets don't contain any previous player sets
                 append(Acc,A,Acc1), %Add the new player sets to the full list of previous games
                 aggregate_all(bag(Count), pairs_in(P,Acc1,Count), ListOfReplayCounts), %Get the list of times a player pair plays each other
-                items_in_range(ListOfReplayCounts,1), %Players play with each other player close to the same number of times
+                items_in_range(ListOfReplayCounts, 1), %Players play with each other player close to the same number of times
                 list_lengths(P,Acc1,SetLengths),
                 list_counts(3,SetLengths,ThreePlayerCounts),
-                items_in_range(ThreePlayerCounts,1),
+                items_in_range(ThreePlayerCounts,2),
                 list_counts(4,SetLengths,FourPlayerCounts),
-                items_in_range(FourPlayerCounts,1),
+                items_in_range(FourPlayerCounts,2),
                 I1 is I-1,  %move to the next game
                 games(I1,B,Acc1),
                 write_and_close(I),
                 write_and_close(A).
 
-go :- games([A,B,C]), writeln(A|B|C), halt.
+go :- games([A,B,C,D,E,F,G,H,I]), writeln([A,B,C,D,E,F,G,H,I]), halt.
