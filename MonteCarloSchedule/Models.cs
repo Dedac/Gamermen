@@ -29,9 +29,8 @@ namespace MonteCarloSchedule
     class Set
     {
         public List<Month> Months { get; set; }
-        public List<(Player, Player, int)> PlayedCounts { get; set; } = new List<(Player, Player, int)>();
-        public List<Player> Players { get; internal set; } = new List<Player>();
-        
+        public List<Player> Players { get; set; } = new List<Player>();
+
         public int Min3s => Players.Select(p => p.PlayerCount3s).Min();
         public int Max3s => Players.Select(p => p.PlayerCount3s).Max();
         public int PlayedWithMin => Players.Select(p => p.PlayedWith.Distinct().Count()).Min();
