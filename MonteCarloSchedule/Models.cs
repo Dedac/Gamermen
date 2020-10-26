@@ -52,11 +52,11 @@ namespace MonteCarloSchedule
                 Console.WriteLine($"{p.Name.PadRight(8)} - 3s: {p.PlayerCount3s}, 4s: {p.PlayerCount4s} - Played With Different:{p.PlayedWith.Distinct().Count()}");
             }
 
-            EvalText();
+            Console.WriteLine(EvalText());
         }
 
-        public void EvalText(){
-            Console.WriteLine($"3s:{Min3s},{Max3s},  Distinct Played With: Min {PlayedWithMin}, Max {PlayedWithMax}, Sum {PlayedWithSum}");
+        public string EvalText(){
+            return $"3s:{Min3s},{Max3s},  Distinct Played With: Min {PlayedWithMin}, Max {PlayedWithMax}, Sum {PlayedWithSum}";
         }
     }
 }
