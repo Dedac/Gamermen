@@ -17,10 +17,10 @@ namespace MonteCarloSchedule
                 BestSet = JsonSerializer.Deserialize<Set>(File.ReadAllText(args[0]));
 
             //Run as many in parallel as your processors support
-            Parallel.For(0, 10, (int j) =>
+            Parallel.For(0, 8, (int j) =>
             {
                 int counter = 0;
-                while (counter < 100000)
+                while (counter < 1000000)
                 {
                     counter++;
 
