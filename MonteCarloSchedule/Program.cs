@@ -17,7 +17,7 @@ namespace MonteCarloSchedule
                 BestSet = JsonSerializer.Deserialize<Set>(File.ReadAllText(args[0]));
 
             //Run as many in parallel as your processors support
-            Parallel.For(0, 10, (int j) =>
+            Parallel.For(0, 14, (int j) =>
             {
                 int counter = 0;
                 while (counter < 1000000)
@@ -32,12 +32,14 @@ namespace MonteCarloSchedule
                         set.PlayedWithMin >= BestSet.PlayedWithMin &&
                         set.PlayedWithSum > BestSet.PlayedWithSum
                        )
+                    {
                         BestSet = set;
+                        File.WriteAllText($"BestSet{DateTime.Now.ToString("yyyyMMddHHmmss")}.json", JsonSerializer.Serialize(BestSet));
+                    }
                 }
             });
 
             BestSet.Display();
-            File.WriteAllText($"BestSet{DateTime.Now.ToString("yyyyMMddHHmmss")}.json", JsonSerializer.Serialize(BestSet));
         }
 
         static Set BuildSet()
@@ -68,7 +70,7 @@ namespace MonteCarloSchedule
                     game.Players.ToList().ForEach(p =>
                     {
                         if (game.Players.Contains(p))  //player hasn't been removed from the game
-                        { 
+                        {
                             var others = game.Players.FindAll(a => a != p);
                             var mp = currentSet.Players.FirstOrDefault(mp => mp.Name == p); //player from the set
 
@@ -97,7 +99,7 @@ namespace MonteCarloSchedule
                                 }
                             }
 
-                           
+
                         }
                     });
 
