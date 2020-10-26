@@ -25,7 +25,7 @@ namespace MonteCarloSchedule
                     counter++;
 
                     if (counter % 10000 == 0)
-                        Console.WriteLine($"{j} - {BestSet.EvalText()}");
+                        Console.WriteLine($"{j}/{counter} - {BestSet.EvalText()}");
 
                     var set = BuildSet();
                     if (//set.Min3s > 0 && set.Max3s < 5 &&
