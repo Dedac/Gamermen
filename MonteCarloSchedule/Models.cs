@@ -32,7 +32,8 @@ namespace MonteCarloSchedule
         public List<(Player, Player, int)> PlayedCounts { get; set; } = new List<(Player, Player, int)>();
         public List<Player> Players { get; internal set; } = new List<Player>();
         
-        public bool Range3 => Players.TrueForAll(p => p.PlayerCount3s > 0);
+        public int Min3s => Players.Select(p => p.PlayerCount3s).Min();
+        public int Max3s => Players.Select(p => p.PlayerCount3s).Max();
         public int PlayedWithMin => Players.Select(p => p.PlayedWith.Distinct().Count()).Min();
         public int PlayedWithMax => Players.Select(p => p.PlayedWith.Distinct().Count()).Max();
         public int PlayedWithSum => Players.Select(p => p.PlayedWith.Distinct().Count()).Sum();
@@ -56,7 +57,7 @@ namespace MonteCarloSchedule
         }
 
         public void EvalText(){
-            Console.WriteLine($"Distinct Played With: Min {PlayedWithMin}, Max {PlayedWithMax}, Sum {PlayedWithSum}");
+            Console.WriteLine($"3s:{Min3s},{Max3s},  Distinct Played With: Min {PlayedWithMin}, Max {PlayedWithMax}, Sum {PlayedWithSum}");
         }
     }
 }
