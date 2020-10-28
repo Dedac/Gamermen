@@ -14,33 +14,60 @@ namespace MonteCarloSchedule
             Set BestSet = BuildSet();
 
             if (args.Length > 0) //If there is a set file specified, start with that as the best set
-                BestSet = JsonSerializer.Deserialize<Set>(File.ReadAllText(args[0]));
+                BestSet = JsonSerializer.Deserialize<Set>(File.ReadAllText(args[0]));            
 
             //Run as many in parallel as your processors support
-            Parallel.For(0, 14, (int j) =>
+            Parallel.For(0, 8, (int j) =>
             {
                 int counter = 0;
-                while (counter < 1000000)
+                int bestSumCycle = 0;
+                while (counter < 10000)
                 {
                     counter++;
 
-                    if (counter % 10000 == 0)
-                        Console.WriteLine($"{j}/{counter} - {BestSet.EvalText()}");
+                    if (counter % 1000 == 0)
+                    {
+                        Console.WriteLine($"{j}/{counter} - {BestSet.EvalText()}, Best Sum This cycle {bestSumCycle}");
+                        bestSumCycle = 0;
+                    }
 
                     var set = BuildSet();
-                    if (//set.Min3s > 0 && set.Max3s < 5 &&
-                        set.PlayedWithMin >= BestSet.PlayedWithMin &&
-                        set.PlayedWithSum > BestSet.PlayedWithSum
+                    bestSumCycle = Math.Max(bestSumCycle, set.PlayedWithSum);
+                    if  (set.PlayedWithSum > BestSet.PlayedWithSum ||
+                        (
+                            set.PlayedWithMax - set.PlayedWithMin < BestSet.PlayedWithMax - BestSet.PlayedWithMin
+                            && set.PlayedWithSum >= BestSet.PlayedWithSum
+                        )
                        )
                     {
                         BestSet = set;
-                        File.WriteAllText($"BestSet{DateTime.Now.ToString("yyyyMMddHHmmss")}.json", JsonSerializer.Serialize(BestSet));
+                        File.WriteAllText($"BestSet{DateTime.Now.ToString($"yyyyMMddHHmmss-{j}")}.json", JsonSerializer.Serialize(BestSet));
                     }
                 }
             });
 
             BestSet.Display();
+            BestSet.Players.ForEach(p => Console.WriteLine($"{p.Name} - {string.Join(", ", GetNewPlayerList().Select(pl => pl.Name).Where(pl => pl != p.Name).Except(p.PlayedWith))}"));
         }
+
+        static void AddPlayersToGame(string player, Game game, List<string> players, Set currentSet)
+        {
+            if (game.Players.Count == 4) return;
+            
+            game.Players.Add(player);
+            
+            var mp = currentSet.Players.FirstOrDefault(mp => mp.Name == player); 
+
+            var unplayed = players.Except(game.Players).ToList().Except(game.Players.SelectMany(pl => currentSet.Players.FirstOrDefault(mp => mp.Name == pl).PlayedWith));
+        
+            if (unplayed.Count() == 0) unplayed = players.Except(mp.PlayedWith).Except(game.Players);
+            
+            var nextunplayed = unplayed.FirstOrDefault() ?? players.First();
+            
+            AddPlayersToGame(nextunplayed, game, players.Where(pl => pl != player).ToList(), currentSet);
+        }
+
+
 
         static Set BuildSet()
         {
@@ -52,56 +79,14 @@ namespace MonteCarloSchedule
             {
                 var players = GetNewPlayerList().Select(p => p.Name).ToList();
 
-                //Get the list of players that don't have 2  3 player games yet
-                //var needs3player = currentSet.Players.Where(p => p.PlayerCount3s < 2).Select(p => p.Name).ToList();
-                //players = players.Except(needs3player).ToList(); //get the list of players without those players
-
                 players.Shuffle();
-                //needs3player.Shuffle();
-                //put the needs 3 player group at the end to make them more likley to get a three player game
-                //players.AddRange(needs3player);
 
                 for (int i = 0; i < 7; i++) //Build 7 games
                 {
-                    var playercount = 4; // (i == 5 || i == 6) ? 3 : 4;  //The Last 2 games will be 3 player games
-                    var game = new Game() { Players = players.GetRange(0, playercount) }; //Get the next set of players for this game
+                    var playercount = 4; //no longer using 
+                    var game = new Game() { }; //Get the next set of players for this game
 
-                    //Look to swap an players for the maximum number of different players played
-                    game.Players.ToList().ForEach(p =>
-                    {
-                        if (game.Players.Contains(p))  //player hasn't been removed from the game
-                        {
-                            var others = game.Players.FindAll(a => a != p);
-                            var mp = currentSet.Players.FirstOrDefault(mp => mp.Name == p); //player from the set
-
-                            //swap the players this player has played more than once, if there are unplayed players
-                            foreach (var mpp in others.Select(o => (name: o, playCount: mp.PlayedWith.Count(c => c == o))).OrderBy(o => o.playCount).Where(o => o.playCount > 1))
-                            {
-                                var nextUnplayed = players.Where(a => !game.Players.Contains(a)).FirstOrDefault(a => !mp.PlayedWith.Contains(a));
-                                if (nextUnplayed != null)
-                                {
-                                    game.Players.Remove(mpp.name);
-                                    game.Players.Add(nextUnplayed);
-                                    others = game.Players.FindAll(a => a != p); //Update Others
-                                }
-                            }
-
-                            //If there still are any unplayed players, replace the most played player with the first unplayed player
-                            var firstUnplayed = players.Where(a => !game.Players.Contains(a)).FirstOrDefault(a => !mp.PlayedWith.Contains(a));
-                            if (firstUnplayed != null) //There is an unplayed player
-                            {
-                                var mostPlayedWith = others.Select(o => (name: o, playCount: mp.PlayedWith.Count(c => c == o))).OrderBy(o => o.playCount).First();
-                                if (mostPlayedWith.playCount > 0) //The player this player has most played with is more than once
-                                {
-                                    //swap the players
-                                    game.Players.Remove(mostPlayedWith.name);
-                                    game.Players.Add(firstUnplayed);
-                                }
-                            }
-
-
-                        }
-                    });
+                    AddPlayersToGame(players.First(), game, players, currentSet);
 
                     m.Games.Add(game);
                     //remove players added to this set from future games
