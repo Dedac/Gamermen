@@ -116,7 +116,7 @@ namespace MonteCarloSchedule
                 new Player {Name = "Ralph"},
                 new Player {Name = "Nick"},
                 new Player {Name = "Ian"},
-                new Player {Name = "Elliot"},
+                new Player {Name = "Elliott"},
                 new Player {Name = "Amanda"},
                 new Player {Name = "Brett"},
                 new Player {Name = "Schoppie"},
