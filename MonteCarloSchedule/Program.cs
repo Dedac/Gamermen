@@ -21,11 +21,11 @@ namespace MonteCarloSchedule
             {
                 int counter = 0;
                 int bestSumCycle = 0;
-                while (counter < 10000000)
+                while (counter < 5000)
                 {
                     counter++;
 
-                    if (counter % 10000 == 0){
+                    if (counter % 1000 == 0){
                         Console.WriteLine($"{j}/{counter} - {BestSet.EvalText()}, Best Sum This cycle {bestSumCycle}");
                         bestSumCycle = 0;
                     }
