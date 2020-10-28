@@ -49,7 +49,6 @@ namespace MonteCarloSchedule
             }
 
             foreach (var p in Players){
-                //Console.WriteLine($"{p.Name.PadRight(8)} - 3s: {p.PlayerCount3s}, 4s: {p.PlayerCount4s} - Played With Different:{p.PlayedWith.Distinct().Count()}");
                 Console.WriteLine($"{p.Name.PadRight(8)} - Played With Different:{p.PlayedWith.Distinct().Count()}");
             }
 
@@ -57,7 +56,6 @@ namespace MonteCarloSchedule
         }
 
         public string EvalText(){
-            //return $"3s:{Min3s},{Max3s},  Distinct Played With: Min {PlayedWithMin}, Max {PlayedWithMax}, Sum {PlayedWithSum}";
             return $"Distinct Played With: Min {PlayedWithMin}, Max {PlayedWithMax}, Sum {PlayedWithSum}";
         }
     }

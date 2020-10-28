@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/MonteCarloSchedule/bin/Debug/netcoreapp3.1/MonteCarloSchedule.dll",
-            "args": [],
+            "args": ["BestSet20201028012752-4.json"],
             "cwd": "${workspaceFolder}/MonteCarloSchedule",
             "console": "internalConsole",
             "stopAtEntry": false
