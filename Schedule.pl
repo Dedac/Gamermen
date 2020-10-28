@@ -8,8 +8,7 @@ write_and_close(X) :-
     writeln(Out,X),
     close(Out).
 
-%players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian,matthew,melanie,alf,arbuckle,q,w,e,r,t,y,u,i,o,r]).
-players([rich,joe,ralph,andrew,jeff,schultz,schoppie,marty,eman,ian,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r]).
+players([rich,joe, andrew, ralph, nick, ian, elliot, amanda, brett, schoppie, jeff, pierce, gabe, melanie, kieran, tony, alexF, marty, mike, kathleen, jeremy, jimmy, lindsay, jordanF, danielle, jordanB, matt, kayleigh]). 
 
 % L is The subset of the list following X
 el(X,[X|L],L). %When X is the first item, return the list without X
@@ -25,14 +24,14 @@ selectN(N,L,[X|S]) :- N > 0,
    N1 is N-1,
    selectN(N1,R,S).
 
-% group(G,Ns,Gs) :- distribute the elements of G into the groups Gs.
-%    The group sizes are given in the list Ns.
-group([],[],[]).
-group(G,[N1|Ns],[G1|Gs]) :- 
-   selectN(N1,G,G1),
-   subtract(G,G1,R),
-   group(R,Ns,Gs).
+comb(0,_,[]).
+comb(N,[X|T],[X|Comb]):-N>0,N1 is N-1,comb(N1,T,Comb).
+comb(N,[_|T],Comb):-N>0,comb(N,T,Comb).
 
+%comb2 assumes the list with N free variables as its second argument and it binds these variables. So, use ?-comb2([1,2,3,4],[X,Y]) to generate combinations with two elements.
+comb2(_,[]).
+comb2([X|T],[X|Comb]):-comb2(T,Comb).
+comb2([_|T],[X|Comb]):-comb2(T,[X|Comb]).
 
 %Check in any member of the the list X exists in the list A
 not_in([],_) :- !.
