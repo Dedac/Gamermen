@@ -1,15 +1,15 @@
 {
     "Months":
     [
-        {"Game" : "Azul", "Name" : "Nov"},
-        {"Game" : "Kingdom Builder", "Name" : "Dec"},
-        {"Game" : "Potion Explosion", "Name" : "Jan"},
-        {"Game" : "Carcassonne", "Name" : "Feb"},
-        {"Game" : "Acquire", "Name" : "Apr"},
-        {"Game" : "Colt Express", "Name" : "May"},
-        {"Game" : "Race For the Galaxy", "Name" : "Jun"},
-        {"Game" : "Libertalia", "Name" : "Jul"},
-        {"Game" : "Seasons", "Name" : "Dec"}
+        {"Game" : "Nov", "Name" : "Nov"},
+        {"Game" : "Dec", "Name" : "Dec"},
+        {"Game" : "Jan", "Name" : "Jan"},
+        {"Game" : "Feb", "Name" : "Feb"},
+        {"Game" : "Apr", "Name" : "Apr"},
+        {"Game" : "May", "Name" : "May"},
+        {"Game" : "Jun", "Name" : "Jun"},
+        {"Game" : "Jul", "Name" : "Jul"},
+        {"Game" : "Aug", "Name" : "Aug"}
     ],
     "Players" : 
     [
