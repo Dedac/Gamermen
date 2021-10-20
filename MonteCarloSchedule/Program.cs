@@ -12,7 +12,7 @@ namespace MonteCarloSchedule
         static void Main(string[] args)
         {
             Set BestSet = BuildSet();
-
+            
             if (args.Length > 0) //If there is a set file specified, start with that as the best set
                 BestSet = JsonSerializer.Deserialize<Set>(File.ReadAllText(args[0]));            
 
@@ -81,7 +81,7 @@ namespace MonteCarloSchedule
 
                 players.Shuffle();
 
-                for (int i = 0; i < 7; i++) //Build 7 games
+                for (int i = 0; i < 4; i++) //Build 4 games
                 {
                     var playercount = 4; //no longer using 
                     var game = new Game() { }; //Get the next set of players for this game
@@ -109,49 +109,10 @@ namespace MonteCarloSchedule
         }
 
         static List<Player> GetNewPlayerList() =>
-             new List<Player> {
-                new Player {Name = "Rich"},
-                new Player {Name = "Joe"},
-                new Player {Name = "Andrew"},
-                new Player {Name = "Ralph"},
-                new Player {Name = "Nick"},
-                new Player {Name = "Ian"},
-                new Player {Name = "Elliott"},
-                new Player {Name = "Amanda"},
-                new Player {Name = "Brett"},
-                new Player {Name = "Schoppie"},
-                new Player {Name = "Jeff"},
-                new Player {Name = "Pierce"},
-                new Player {Name = "Gabe"},
-                new Player {Name = "Melanie"},
-                new Player {Name = "Kieran"},
-                new Player {Name = "Tony"},
-                new Player {Name = "Alex F."},
-                new Player {Name = "Marty"},
-                new Player {Name = "Mike"},
-                new Player {Name = "Kathleen"},
-                new Player {Name = "Jeremy"},
-                new Player {Name = "Jimmy"},
-                new Player {Name = "Lindsay"},
-                new Player {Name = "Jordan F"},
-                new Player {Name = "Danielle"},
-                new Player {Name = "Jordan B"},
-                new Player {Name = "Matt"},
-                new Player {Name = "Kayleigh"}
-            };
+             JsonSerializer.Deserialize<Set>(File.ReadAllText("./MonthAndPlayerInitial.json")).Players;
 
         static List<Month> GetNewMonthList() =>
-            new List<Month> {
-                new Month {Game = "Mapmaker", Name = "Nov"},
-                new Month {Game = "Seasons", Name = "Dec"},
-                new Month {Game = "Kingdom Builder", Name = "Jan"},
-                new Month {Game = "Potion Explosion", Name = "Feb"},
-                new Month {Game = "Carcassonne", Name = "Mar"},
-                new Month {Game = "Puerto Rico", Name = "Apr"},
-                new Month {Game = "Colt Express", Name = "May"},
-                new Month {Game = "Race For the Galaxy", Name = "Jun"},
-                new Month {Game = "Libertalia", Name = "Jul"}
-            };
+            JsonSerializer.Deserialize<Set>(File.ReadAllText("./MonthAndPlayerInitial.json")).Months;
 
         static List<(Player, Player, int)> PlayerPairsPlayed() => new List<(Player, Player, int)>();
     }
