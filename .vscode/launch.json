@@ -10,10 +10,10 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/MonteCarloSchedule/bin/Debug/netcoreapp3.1/MonteCarloSchedule.dll",
-            "args": ["BestSet20201028012752-4.json"],
+            "args": ["Season3.json"],
             "cwd": "${workspaceFolder}/MonteCarloSchedule",
             "console": "internalConsole",
-            "stopAtEntry": false
+            "stopAtEntry": false 
         },
         {
             "name": ".NET Core Attach",

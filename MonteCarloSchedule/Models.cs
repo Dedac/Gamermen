@@ -35,7 +35,11 @@ namespace MonteCarloSchedule
         public int Max3s => Players.Select(p => p.PlayerCount3s).Max();
         public int PlayedWithMin => Players.Select(p => p.PlayedWith.Distinct().Count()).Min();
         public int PlayedWithMax => Players.Select(p => p.PlayedWith.Distinct().Count()).Max();
-        public int PlayedWithSum => Players.Select(p => p.PlayedWith.Distinct().Count()).Sum();
+        public int PlayedWithSum => Players.Select(p => 
+            p.PlayedWith.Distinct().Count() - 
+            p.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 2).Count() -
+            p.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 3).Count())
+            .Sum();
 
         public void Display()
         {
@@ -49,7 +53,7 @@ namespace MonteCarloSchedule
             }
 
             foreach (var p in Players){
-                Console.WriteLine($"{p.Name.PadRight(8)} - Played With Different:{p.PlayedWith.Distinct().Count()}");
+                Console.WriteLine($"{p.Name.PadRight(8)} - Played With Different:{p.PlayedWith.Distinct().Count()} - Same:{p.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 1).Count()}");
             }
 
             Console.WriteLine(EvalText());
