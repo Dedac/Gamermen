@@ -1,0 +1,6 @@
+{
+  "image": "mcr.microsoft.com/dotnet/sdk:7.0",
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {}
+  }
+}
