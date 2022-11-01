@@ -31,11 +31,11 @@ namespace MonteCarloSchedule
             }
 
             //Run as many in parallel as your processors support
-            Parallel.For(0, 16, (int j) =>
+            Parallel.For(0, 7, (int j) =>
             {
                 int counter = 0;
                 int bestSumCycle = 0;
-                while (counter < 10000)
+                while (counter < 30000)
                 {
                     counter++;
 
@@ -77,6 +77,8 @@ namespace MonteCarloSchedule
                 unplayed = players.Except(game.Players).Except(currentPlayer.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 1).Select(x => x.Key));
             if (unplayed.Count() == 0) //if there is still no one unplayed, switch to players played only twice
                 unplayed = players.Except(game.Players).Except(currentPlayer.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 2).Select(x => x.Key));
+            if (unplayed.Count() == 0) //if there is still no one unplayed, switch to players played only thrice
+                unplayed = players.Except(game.Players).Except(currentPlayer.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 3).Select(x => x.Key));
 
             var nextunplayed = unplayed.FirstOrDefault() ?? players.Where(mp => mp != player).FirstOrDefault();
 
