@@ -31,7 +31,7 @@ namespace MonteCarloSchedule
             }
 
             //Run as many in parallel as your processors support
-            Parallel.For(0, 8, (int j) =>
+            Parallel.For(0, 16, (int j) =>
             {
                 int counter = 0;
                 int bestSumCycle = 0;
