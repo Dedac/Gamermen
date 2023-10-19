@@ -35,7 +35,7 @@ namespace MonteCarloSchedule
             {
                 int counter = 0;
                 int bestSumCycle = 0;
-                while (counter < 30000)
+                while (counter < 100000)
                 {
                     counter++;
 
@@ -64,33 +64,31 @@ namespace MonteCarloSchedule
             BestSet.Players.ForEach(p => Console.WriteLine($"{p.Name} - {string.Join(", ", p.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 2).Select(x => $"{x.Key}({x.Count()} Times)"))}"));
         }
 
-        static void AddPlayersToGame(string player, Game game, List<string> players, Set currentSet)
+        static void AddPlayersToGame(string player, Game game, HashSet<string> players, Set currentSet)
         {
-            if (player == null || game.Players.Count == 4) return; //run until we add 4 players to a game or there are no more players
+            if (player == null || game.Players.Count == 4) return;
 
             game.Players.Add(player);
+            players.Remove(player);
 
             var currentPlayer = currentSet.Players.FirstOrDefault(mp => mp.Name == player);
 
-            var unplayed = players.Except(currentPlayer.PlayedWith).Except(game.Players);
-            if (unplayed.Count() == 0) //if there is no one unplayed, switch to players played only once
-                unplayed = players.Except(game.Players).Except(currentPlayer.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 1).Select(x => x.Key));
-            if (unplayed.Count() == 0) //if there is still no one unplayed, switch to players played only twice
-                unplayed = players.Except(game.Players).Except(currentPlayer.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 2).Select(x => x.Key));
-            if (unplayed.Count() == 0) //if there is still no one unplayed, switch to players played only thrice
-                unplayed = players.Except(game.Players).Except(currentPlayer.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 3).Select(x => x.Key));
+            var unplayed = players.Except(currentPlayer.PlayedWith);
+            var nextUnplayed = unplayed.FirstOrDefault() ?? 
+                players.Except(game.Players).Except(currentPlayer.PlayedWith.GroupBy(x => x)
+                .Where(g => g.Count() > 1).Select(x => x.Key))
+                .FirstOrDefault();
 
-            var nextunplayed = unplayed.FirstOrDefault() ?? players.Where(mp => mp != player).FirstOrDefault();
-
-            AddPlayersToGame(nextunplayed, game, players.Where(pl => pl != player).ToList(), currentSet);
+            AddPlayersToGame(nextUnplayed, game, players, currentSet);
         }
-
 
         static Set BuildSet()
         {
-            var currentSet = new Set();
-            currentSet.Months = GetNewMonthList();
-            currentSet.Players = GetNewPlayerList();
+            var currentSet = new Set
+            {
+                Months = GetNewMonthList(),
+                Players = GetNewPlayerList()
+            };
 
 
             foreach (var m in currentSet.Months)
@@ -103,7 +101,7 @@ namespace MonteCarloSchedule
                 {
                     var game = new Game();
 
-                    AddPlayersToGame(players.First(), game, players, currentSet);
+                    AddPlayersToGame(players.First(), game, players.ToHashSet(), currentSet);
 
                     m.Games.Add(game);
                     //remove players added to this set from future games
@@ -134,7 +132,7 @@ namespace MonteCarloSchedule
         static List<Month> GetNewMonthList() =>
                 JsonSerializer.Deserialize<Set>(File.ReadAllText("./MonthAndPlayerInitial.json")).Months;
 
-        static List<(Player, Player, int)> PlayerPairsPlayed() => new List<(Player, Player, int)>();
+        static List<(Player, Player, int)> PlayerPairsPlayed() => new();
     }
 }
 
