@@ -9,6 +9,10 @@ namespace MonteCarloSchedule
 {
     class Program
     {
+        const int ParallelRuns = 7;
+        const int IterationsPerRun = 5000;
+        const int ProgressInterval = 500;
+
         static void Main(string[] args)
         {
             Set BestSet = BuildSet();
@@ -31,15 +35,15 @@ namespace MonteCarloSchedule
             }
 
             //Run as many in parallel as your processors support
-            Parallel.For(0, 7, (int j) =>
+            Parallel.For(0, ParallelRuns, (int j) =>
             {
                 int counter = 0;
                 int bestSumCycle = 0;
-                while (counter < 100000)
+                while (counter < IterationsPerRun)
                 {
                     counter++;
 
-                    if (counter % 1000 == 0)
+                    if (counter % ProgressInterval == 0)
                     {
                         Console.WriteLine($"{j}/{counter} - {BestSet.EvalText()}, Best Sum This cycle {bestSumCycle}");
                         bestSumCycle = 0;
