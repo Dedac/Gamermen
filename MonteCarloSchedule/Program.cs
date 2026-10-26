@@ -9,53 +9,138 @@ namespace MonteCarloSchedule
 {
     class Program
     {
+        readonly record struct PairQuality(int Need, int NewPairs, int RepeatPenalty)
+        {
+            public PairQuality Add(PairQuality other) =>
+                new(Need + other.Need, NewPairs + other.NewPairs, RepeatPenalty + other.RepeatPenalty);
+
+            public int CompareTo(PairQuality other)
+            {
+                var comparison = Need.CompareTo(other.Need);
+                if (comparison != 0) return comparison;
+                comparison = NewPairs.CompareTo(other.NewPairs);
+                return comparison != 0 ? comparison : other.RepeatPenalty.CompareTo(RepeatPenalty);
+            }
+        }
+
+        sealed class PartnerHistory
+        {
+            readonly Dictionary<string, int> _playerIndices;
+            readonly int[,] _pairCounts;
+            readonly int[] _distinctCounts;
+
+            public PartnerHistory(IEnumerable<string> playerNames)
+            {
+                var names = playerNames.ToList();
+                _playerIndices = names.Select((name, index) => (name, index))
+                    .ToDictionary(item => item.name, item => item.index);
+                _pairCounts = new int[names.Count, names.Count];
+                _distinctCounts = new int[names.Count];
+            }
+
+            public int PairCount(string first, string second) =>
+                _pairCounts[_playerIndices[first], _playerIndices[second]];
+
+            public int DistinctCount(string player) => _distinctCounts[_playerIndices[player]];
+
+            public void AddGame(IReadOnlyList<string> players)
+            {
+                for (int i = 0; i < players.Count; i++)
+                {
+                    var first = _playerIndices[players[i]];
+                    for (int j = i + 1; j < players.Count; j++)
+                    {
+                        var second = _playerIndices[players[j]];
+                        if (_pairCounts[first, second] == 0)
+                        {
+                            _distinctCounts[first]++;
+                            _distinctCounts[second]++;
+                        }
+                        _pairCounts[first, second]++;
+                        _pairCounts[second, first]++;
+                    }
+                }
+            }
+
+            public PairQuality EvaluateTable(IReadOnlyList<string> players)
+            {
+                var quality = new PairQuality();
+                for (int i = 0; i < players.Count; i++)
+                {
+                    var first = players[i];
+                    for (int j = i + 1; j < players.Count; j++)
+                    {
+                        var second = players[j];
+                        var count = PairCount(first, second);
+                        if (count == 0)
+                        {
+                            var maxDistinct = _playerIndices.Count - 1;
+                            quality = quality.Add(new PairQuality(
+                                maxDistinct - DistinctCount(first) + maxDistinct - DistinctCount(second),
+                                1,
+                                0));
+                        }
+                        else
+                        {
+                            quality = quality.Add(new PairQuality(0, 0, 2 * count - 1));
+                        }
+                    }
+                }
+                return quality;
+            }
+        }
+
+        const int ParallelRuns = 7;
+        const int IterationsPerRun = 100000;
+        const int ProgressInterval = 500;
+        const int ImprovementAttempts = 200;
+
         static void Main(string[] args)
         {
             Set BestSet = BuildSet();
+            var bestSetLock = new object();
+            var saveSequence = 0;
 
             //If there is a set file specified, start with that as the best set
             if (args.Length > 0)
             {
                 BestSet = JsonSerializer.Deserialize<Set>(File.ReadAllText(args[0]));
-                //Rebuild player statistics if manually edited games
-                BestSet.Players.ForEach(p =>
-                {
-                    p.PlayerCount3s = 0;
-                    p.PlayerCount4s = 0;
-                    p.PlayedWith = new List<string>();
-                });
-                foreach (var game in BestSet.Months.SelectMany(m => m.Games))
-                {
-                    UpdatePlayerStatistics(game, BestSet);
-                }
+                RebuildPlayerStatistics(BestSet);
             }
 
-            //Run as many in parallel as your processors support
-            Parallel.For(0, 7, (int j) =>
+            var startingBest = CloneSet(BestSet);
+            Parallel.For(0, ParallelRuns, (int j) =>
             {
+                var workerBest = CloneSet(startingBest);
                 int counter = 0;
-                int bestSumCycle = 0;
-                while (counter < 100000)
+                int bestTotalCycle = 0;
+                while (counter < IterationsPerRun)
                 {
                     counter++;
 
-                    if (counter % 1000 == 0)
+                    if (counter % ProgressInterval == 0)
                     {
-                        Console.WriteLine($"{j}/{counter} - {BestSet.EvalText()}, Best Sum This cycle {bestSumCycle}");
-                        bestSumCycle = 0;
+                        Console.WriteLine($"{j}/{counter} - {workerBest.EvalText()}, Best Total This cycle {bestTotalCycle}");
+                        bestTotalCycle = 0;
                     }
-
                     var set = BuildSet();
-                    bestSumCycle = Math.Max(bestSumCycle, set.PlayedWithSum);
-                    if (set.PlayedWithSum > BestSet.PlayedWithSum ||
-                        (
-                            set.PlayedWithMax - set.PlayedWithMin < BestSet.PlayedWithMax - BestSet.PlayedWithMin
-                            && set.PlayedWithSum >= BestSet.PlayedWithSum
-                        )
-                       )
+                    bestTotalCycle = Math.Max(bestTotalCycle, set.PlayedWithTotal);
+                    if (set.IsBetterThan(workerBest))
                     {
-                        BestSet = set;
-                        File.WriteAllText($"BestSet{DateTime.Now.ToString($"yyyyMMddHHmmss-{j}")}.json", JsonSerializer.Serialize(BestSet));
+                        set = ImproveSet(set, ImprovementAttempts);
+                        if (set.IsBetterThan(workerBest))
+                            workerBest = set;
+
+                        lock (bestSetLock)
+                        {
+                            if (workerBest.IsBetterThan(BestSet))
+                            {
+                                BestSet = CloneSet(workerBest);
+                                var sequence = ++saveSequence;
+                                var fileName = $"BestSet{BestSet.Players.Count}Players{DateTime.Now:yyyyMMddHHmmssfff}-{j}-{counter}-{sequence}.json";
+                                File.WriteAllText(fileName, JsonSerializer.Serialize(BestSet));
+                            }
+                        }
                     }
                 }
             });
@@ -64,22 +149,161 @@ namespace MonteCarloSchedule
             BestSet.Players.ForEach(p => Console.WriteLine($"{p.Name} - {string.Join(", ", p.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 2).Select(x => $"{x.Key}({x.Count()} Times)"))}"));
         }
 
-        static void AddPlayersToGame(string player, Game game, HashSet<string> players, Set currentSet)
+        static Set ImproveSet(Set set, int attempts)
         {
-            if (player == null || game.Players.Count == 4) return;
+            var random = ThreadSafeRandom.ThisThreadsRandom;
+            var currentScore = CloneSet(set);
+            var bestScore = CloneSet(set);
+            var eligibleMonths = set.Months.Where(month => month.Games.Count > 1).ToList();
+            if (eligibleMonths.Count == 0)
+                return bestScore;
 
-            game.Players.Add(player);
-            players.Remove(player);
+            for (int attempt = 0; attempt < attempts; attempt++)
+            {
+                var month = eligibleMonths[random.Next(eligibleMonths.Count)];
+                var firstGameIndex = random.Next(month.Games.Count);
+                var secondGameIndex = random.Next(month.Games.Count - 1);
+                if (secondGameIndex >= firstGameIndex)
+                    secondGameIndex++;
 
-            var currentPlayer = currentSet.Players.FirstOrDefault(mp => mp.Name == player);
+                var firstGame = month.Games[firstGameIndex];
+                var secondGame = month.Games[secondGameIndex];
+                if (firstGame.Players.Count == 0 || secondGame.Players.Count == 0)
+                    continue;
 
-            var unplayed = players.Except(currentPlayer.PlayedWith);
-            var nextUnplayed = unplayed.FirstOrDefault() ?? 
-                players.Except(game.Players).Except(currentPlayer.PlayedWith.GroupBy(x => x)
-                .Where(g => g.Count() > 1).Select(x => x.Key))
-                .FirstOrDefault();
+                var firstPlayerIndex = random.Next(firstGame.Players.Count);
+                var secondPlayerIndex = random.Next(secondGame.Players.Count);
+                var firstPlayer = firstGame.Players[firstPlayerIndex];
+                var secondPlayer = secondGame.Players[secondPlayerIndex];
 
-            AddPlayersToGame(nextUnplayed, game, players, currentSet);
+                firstGame.Players[firstPlayerIndex] = secondPlayer;
+                secondGame.Players[secondPlayerIndex] = firstPlayer;
+                RebuildPlayerStatistics(set);
+
+                if (set.IsBetterThan(currentScore) ||
+                    (!currentScore.IsBetterThan(set) && !set.IsBetterThan(currentScore) && random.Next(5) == 0))
+                {
+                    currentScore = CloneSet(set);
+                    if (currentScore.IsBetterThan(bestScore))
+                        bestScore = CloneSet(currentScore);
+                }
+                else
+                {
+                    firstGame.Players[firstPlayerIndex] = firstPlayer;
+                    secondGame.Players[secondPlayerIndex] = secondPlayer;
+                    RebuildPlayerStatistics(set);
+                }
+            }
+
+            return bestScore;
+        }
+
+        static Set CloneSet(Set set) => new()
+        {
+            Players = set.Players.Select(player => new Player
+            {
+                Name = player.Name,
+                PlayerCount3s = player.PlayerCount3s,
+                PlayerCount4s = player.PlayerCount4s,
+                PlayedWith = new List<string>(player.PlayedWith)
+            }).ToList(),
+            Months = set.Months.Select(month => new Month
+            {
+                Name = month.Name,
+                Game = month.Game,
+                Games = month.Games.Select(game => new Game
+                {
+                    Day = game.Day,
+                    Players = new List<string>(game.Players)
+                }).ToList()
+            }).ToList()
+        };
+
+        static string SelectMostConstrainedPlayer(IReadOnlyList<string> players, PartnerHistory history)
+        {
+            var selected = players[0];
+            var fewestUnplayed = int.MaxValue;
+            var fewestPartners = int.MaxValue;
+
+            foreach (var player in players)
+            {
+                var unplayed = players.Count(other =>
+                    other != player && history.PairCount(player, other) == 0);
+                var distinct = history.DistinctCount(player);
+                if (unplayed < fewestUnplayed ||
+                    (unplayed == fewestUnplayed && distinct < fewestPartners))
+                {
+                    selected = player;
+                    fewestUnplayed = unplayed;
+                    fewestPartners = distinct;
+                }
+            }
+
+            return selected;
+        }
+
+        static List<string> AddPlayersToGame(IReadOnlyList<string> players, PartnerHistory history)
+        {
+            var selected = new List<string>(4) { SelectMostConstrainedPlayer(players, history) };
+
+            while (selected.Count < 4)
+            {
+                string bestCandidate = null;
+                var bestQuality = new PairQuality();
+                var hasBestCandidate = false;
+
+                foreach (var candidate in players.Where(player => !selected.Contains(player)))
+                {
+                    var candidateTable = selected.Append(candidate).ToList();
+                    var quality = history.EvaluateTable(candidateTable);
+                    var comparison = hasBestCandidate ? quality.CompareTo(bestQuality) : 1;
+                    if (comparison > 0 || (comparison == 0 && ThreadSafeRandom.ThisThreadsRandom.Next(2) == 0))
+                    {
+                        bestCandidate = candidate;
+                        bestQuality = quality;
+                        hasBestCandidate = true;
+                    }
+                }
+
+                if (bestCandidate == null)
+                    break;
+                selected.Add(bestCandidate);
+            }
+
+            return selected;
+        }
+
+        static (List<string> First, List<string> Second) SelectBestFinalEightSplit(
+            IReadOnlyList<string> players,
+            PartnerHistory history)
+        {
+            var bestFirst = new List<string>();
+            var bestSecond = new List<string>();
+            var bestQuality = new PairQuality();
+            var hasBest = false;
+
+            for (int i = 1; i < 6; i++)
+            {
+                for (int j = i + 1; j < 7; j++)
+                {
+                    for (int k = j + 1; k < 8; k++)
+                    {
+                        var first = new List<string> { players[0], players[i], players[j], players[k] };
+                        var second = players.Where(player => !first.Contains(player)).ToList();
+                        var quality = history.EvaluateTable(first).Add(history.EvaluateTable(second));
+                        var comparison = hasBest ? quality.CompareTo(bestQuality) : 1;
+                        if (comparison > 0 || (comparison == 0 && ThreadSafeRandom.ThisThreadsRandom.Next(2) == 0))
+                        {
+                            bestFirst = first;
+                            bestSecond = second;
+                            bestQuality = quality;
+                            hasBest = true;
+                        }
+                    }
+                }
+            }
+
+            return (bestFirst, bestSecond);
         }
 
         static Set BuildSet()
@@ -89,7 +313,7 @@ namespace MonteCarloSchedule
                 Months = GetNewMonthList(),
                 Players = GetNewPlayerList()
             };
-
+            var history = new PartnerHistory(currentSet.Players.Select(player => player.Name));
 
             foreach (var m in currentSet.Months)
             {
@@ -97,16 +321,21 @@ namespace MonteCarloSchedule
                 var totalGames = players.Count / 4; //integer division
                 players.Shuffle();
 
-                for (int i = m.Games.Count; i < totalGames; i++)
+                while (m.Games.Count < totalGames && players.Count >= 4)
                 {
-                    var game = new Game();
+                    var gamesRemaining = totalGames - m.Games.Count;
+                    var teams = players.Count == 8 && gamesRemaining >= 2
+                        ? SelectBestFinalEightSplit(players, history)
+                        : (AddPlayersToGame(players, history), new List<string>());
 
-                    AddPlayersToGame(players.First(), game, players.ToHashSet(), currentSet);
-
-                    m.Games.Add(game);
-                    //remove players added to this set from future games
-                    players.RemoveAll(p => game.Players.Contains(p));
-                    UpdatePlayerStatistics(game, currentSet);
+                    foreach (var team in new[] { teams.Item1, teams.Item2 }.Where(team => team.Count > 0))
+                    {
+                        var game = new Game { Players = team };
+                        m.Games.Add(game);
+                        players.RemoveAll(player => game.Players.Contains(player));
+                        UpdatePlayerStatistics(game, currentSet);
+                        history.AddGame(game.Players);
+                    }
                 }
             }
 
@@ -126,6 +355,20 @@ namespace MonteCarloSchedule
                 currentPlayer.PlayedWith.AddRange(game.Players.Where(a => a != currentPlayer.Name));
             });
         }
+
+        static void RebuildPlayerStatistics(Set currentSet)
+        {
+            currentSet.Players.ForEach(player =>
+            {
+                player.PlayerCount3s = 0;
+                player.PlayerCount4s = 0;
+                player.PlayedWith.Clear();
+            });
+
+            foreach (var game in currentSet.Months.SelectMany(month => month.Games))
+                UpdatePlayerStatistics(game, currentSet);
+        }
+
         static List<Player> GetNewPlayerList() =>
                 JsonSerializer.Deserialize<Set>(File.ReadAllText("./MonthAndPlayerInitial.json")).Players;
 
@@ -135,4 +378,3 @@ namespace MonteCarloSchedule
         static List<(Player, Player, int)> PlayerPairsPlayed() => new();
     }
 }
-
