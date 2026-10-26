@@ -35,11 +35,25 @@ namespace MonteCarloSchedule
         public int Max3s => Players.Select(p => p.PlayerCount3s).Max();
         public int PlayedWithMin => Players.Select(p => p.PlayedWith.Distinct().Count()).Min();
         public int PlayedWithMax => Players.Select(p => p.PlayedWith.Distinct().Count()).Max();
-        public int PlayedWithSum => Players.Select(p => 
-            p.PlayedWith.Distinct().Count() - 
-            p.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 2).Count() -
-            p.PlayedWith.GroupBy(x => x).Where(g => g.Count() > 3).Count())
+        public int PlayedWithSpread => PlayedWithMax - PlayedWithMin;
+        public int PlayedWithTotal => Players.Sum(p => p.PlayedWith.Distinct().Count());
+        public int RepeatPairPenalty => Players
+            .SelectMany(p => p.PlayedWith
+                .GroupBy(partner => partner)
+                .Where(group => string.CompareOrdinal(p.Name, group.Key) < 0)
+                .Select(group => (group.Count() - 1) * (group.Count() - 1)))
             .Sum();
+
+        public bool IsBetterThan(Set other)
+        {
+            if (PlayedWithMin != other.PlayedWithMin)
+                return PlayedWithMin > other.PlayedWithMin;
+            if (PlayedWithSpread != other.PlayedWithSpread)
+                return PlayedWithSpread < other.PlayedWithSpread;
+            if (RepeatPairPenalty != other.RepeatPairPenalty)
+                return RepeatPairPenalty < other.RepeatPairPenalty;
+            return PlayedWithTotal > other.PlayedWithTotal;
+        }
 
         public void Display()
         {
@@ -60,8 +74,7 @@ namespace MonteCarloSchedule
         }
 
         public string EvalText(){
-            return $"Distinct Played With: Min {PlayedWithMin}, Max {PlayedWithMax}, Sum {PlayedWithSum}";
+            return $"Distinct partners: Min {PlayedWithMin}, Max {PlayedWithMax}, Total {PlayedWithTotal}, Repeat penalty {RepeatPairPenalty}";
         }
     }
 }
-
